@@ -2490,7 +2490,7 @@ function scrEvent(){
       if(md==='endless'){ if(!S.estages['loy-3']){ toast('ผ่านด่านกิจกรรม 3 ก่อนนะ'); return;} popStageDetail({event:'loy',endless:1,stage:0,mapIdx:Math.floor(Math.random()*2)}); }
       if(md==='mini'){ if(!miniLeft('krathong')){ toast('ครบจำนวนครั้งวันนี้แล้ว'); return;} playKrathong(); }
       if(md==='gacha'){ gIdx=0; go('gacha'); } if(md==='shop'){ shopTab='event'; go('shop'); } }); }
-  $$('.evst .sbtn',el).forEach(b=>b.onclick=()=>{ if(b.classList.contains('lock')){ toast('ผ่านด่านก่อนหน้าก่อน'); return;} const e=EVENTS.find(x=>x.id===b.dataset.e); if(!(now>=e.start&&now<=e.end)){ toast('กิจกรรมสิ้นสุดแล้ว'); return;} AudioSys.sfx('click'); popStageDetail({event:e.id,stage:+b.dataset.s}); });
+  $$('.evst .sbtn[data-e]',el).forEach(b=>b.onclick=()=>{ if(b.classList.contains('lock')){ toast('ผ่านด่านก่อนหน้าก่อน'); return;} const e=EVENTS.find(x=>x.id===b.dataset.e); if(!(now>=e.start&&now<=e.end)){ toast('กิจกรรมสิ้นสุดแล้ว'); return;} AudioSys.sfx('click'); popStageDetail({event:e.id,stage:+b.dataset.s}); });
   $$('[data-shop]',el).forEach(b=>b.onclick=()=>{ shopTab='event'; go('shop'); });
 }
 
