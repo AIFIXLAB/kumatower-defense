@@ -910,7 +910,7 @@ Object.assign(MON,{
   m_ghost:E('mc9','วิญญาณไฟฟ้า','dark','flying',['invis','curse']), m_oni:E('mc10','ยักษ์โอนิ','fire','tank',['burnT']), m_reaper:E('mc11','ยมทูตน้อย','dark','normal',['curse','sleep']),
   m_slime:E('mc12','สไลม์ฟ้าคุมะ','water','normal',['split']), m_mimic:E('mc13','มิมิคคุมะ','earth','shielded',['steal']), m_plant:E('mc14','ดอกไม้กินคน','nature','tank',['web','sleep'])
 });
-ENEMY_TYPES.boss={hp:68,spd:30,armor:0.32,rew:600,leak:12,scale:2.3};
+ENEMY_TYPES.boss={hp:80,spd:30,armor:0.35,rew:600,leak:12,scale:2.3};
 ENEMY_TYPES.elite={hp:8,spd:46,armor:0.3,rew:80,leak:3,scale:1.3};
 MON.sprout.sk=['heal']; MON.caveman.sk=['dash','armorUp']; MON.ogre.sk=['stun']; MON.wolf.sk=['dash','invis']; MON.boar.sk=['dash','armorUp'];
 // bosses: {img, name, elem, ult, tint}
@@ -1665,7 +1665,7 @@ let B=null, B_world=null;
 function stageSeed(w,s){ return w*100+s; }
 function makeWaves(cfg){
   const waves=[]; const {pool,nW,g,diff,bossA,bossB,stage}=cfg;
-  const hpBase=195*Math.pow(1.08,g-1)*diff;
+  const hpBase=215*Math.pow(1.08,g-1)*diff;
   const unlocked=pool.slice(0,Math.min(pool.length,3+stage));
   for(let k=1;k<=nW;k++){
     const list=[]; const cnt=Math.round(6+k*1.6+stage*0.6);
@@ -1791,7 +1791,7 @@ function damage(e,amt,opt={}){
 }
 function killEnemy(e,src){
   if(e.dead) return; e.dead=true; B.kills++; if(B.rush){ const c=e.boss?300:e.elite?40:10; B.rush.coins+=c; floatText(e.x,e.y-95*e.scale,'+'+c,'#ffd23a',16,false,'i74'); } if(src) src.kills++; for(const cb of B.combos) if(cb.on) cb.g=Math.min(100,cb.g+(e.boss?30:e.elite?6:1.6));
-  const r=Math.round(e.rew*(1+B.bonus.rew)*(src&&src.c.cls==='gunner'&&src.c.elem==='water'?1.25:1)); B.energy+=r; B.earned.energy+=r;
+  const r=Math.round(e.rew*0.75*(1+B.bonus.rew)*(src&&src.c.cls==='gunner'&&src.c.elem==='water'?1.25:1)); B.energy+=r; B.earned.energy+=r;
   burst(e.x,e.y-25*e.scale,e.boss?60:16,['#fff','#ffe6f7','#fff2a8',ELEMENTS[e.elem].c],'star',e.boss?420:220);
   B.fx.push({type:'ring',x:e.x,y:e.y,t:0,max:0.45,c:'#ffffff',r:50*e.scale});
   floatText(e.x,e.y-70*e.scale,'+'+r+'⚡','#ffe36b',15);
@@ -1990,7 +1990,7 @@ function castCombo(cb){
 // ---------- update ----------
 let lastT=0;
 function update(dt){
-  const b=B; b.time+=dt; b.debuffGate-=dt; if(!b.over&&(b.waveActive||b.wave>0)){ b.regen=4+b.wave*0.8+(b.enemies.length>15?3:0); b.energy+=dt*b.regen; } if(b.clock>0) b.clock-=dt;
+  const b=B; b.time+=dt; b.debuffGate-=dt; if(!b.over&&(b.waveActive||b.wave>0)){ b.regen=1.5+b.wave*0.3+(b.enemies.length>18?1:0); b.energy+=dt*b.regen; } if(b.clock>0) b.clock-=dt;
   // waves
   if(!b.waveActive){
     if(b.wave<b.nW && !b.pickingBonus){ b.countdown-=dt; if(b.countdown<=0) startNextWave(); }
@@ -2074,7 +2074,7 @@ function startNextWave(){
   AudioSys.sfx('wave'); showWaveBanner(b.wave===b.nW&&list.some(s=>s.boss)?'BOSS WAVE!':'WAVE '+b.wave); updateHUD();
 }
 function waveCleared(){
-  const b=B; b.waveActive=false; b.energy+=40+b.wave*8;
+  const b=B; b.waveActive=false; b.energy+=25+b.wave*5;
   if(b.wave>=b.nW){ endBattle(true); return; }
   b.countdown=8;
   if(b.wave%3===0){ b.pickingBonus=true; showBonusPick(); }
