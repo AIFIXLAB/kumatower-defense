@@ -2277,7 +2277,7 @@ function topbar(title,back='menu'){
   return `<div class="topbar">
     <button class="ibtn back" data-go="${back}"><img src="${src('pin')}" style="display:none">◀</button>
     <div class="ttl">${title}</div>
-    <div class="cur"><span><img src="${src('coin')}">${fmt(S.gold)}</span><span><img src="${src('gem')}">${fmt(S.gems)}</span><span><img src="${src('bolt')}">${S.stamina}/${staminaMax()}</span></div>
+    <div class="cur"><span><img src="${src('coin')}">${fmt(S.gold)}</span><span><img src="${src('gem')}">${fmt(S.gems)}</span></div>
   </div>`;
 }
 function bindCommon(root){
@@ -2300,7 +2300,7 @@ function scrMenu(){
     <div class="cover lvbox" style="${P(128,18,222,80)}"><b>Lv.${S.lvl}</b><small>${S.name}</small><div class="xp"><i style="width:${S.exp/playerExpNeed(S.lvl)*100}%"></i></div></div>
     <div class="cover num" style="${P(944,20,136,42)}">${fmt(S.gold)}</div>
     <div class="cover num" style="${P(1203,20,108,42)}">${fmt(S.gems)}</div>
-    <div class="cover num" style="${P(1402,20,104,42)}">${S.stamina}/${staminaMax()}</div>
+    <div class="cover num" style="${P(1402,20,104,42)}">∞</div>
     <div class="hot" style="${P(1085,14,45,50)}" data-m="shop"></div><div class="hot" style="${P(1318,14,45,50)}" data-m="shop"></div><div class="hot" style="${P(1505,14,45,50)}" data-m="stamina"></div>
     <div class="hot" style="${P(1552,8,50,62)}" data-m="mail"></div><div class="hot" style="${P(1608,8,58,62)}" data-m="login"></div>
     ${[['world',125,115],['collection',250,90],['team',345,88],['gacha',435,88],['shop',525,88],['mission',615,88],['event',705,88],['setting',795,88]].map(([k,y,hh])=>`<div class="hot mbtn" style="${P(1270,y,378,hh)}" data-m="${k}"></div>`).join('')}
@@ -2318,7 +2318,7 @@ function scrMenu(){
   $('[data-room]',el).onclick=()=>{ AudioSys.unlock(); AudioSys.sfx('click'); go('room'); };
   $('[data-mini]',el).onclick=()=>{ AudioSys.unlock(); AudioSys.sfx('click'); go('minigame'); };
   $$('.hot',el).forEach(b=>b.addEventListener('click',()=>{ AudioSys.unlock(); AudioSys.sfx('click'); const m=b.dataset.m;
-    if(m==='profile') return popProfile(); if(m==='mail') return popMail(); if(m==='login') return popLogin(); if(m==='stamina') return popStamina(); if(m==='ach') return go('trophy','ach');
+    if(m==='profile') return popProfile(); if(m==='mail') return popMail(); if(m==='login') return popLogin(); if(m==='stamina') return toast('เล่นได้ไม่จำกัด ไม่ต้องใช้พลังงาน'); if(m==='ach') return go('trophy','ach');
     go(m); }));
   // sparkles
   const sp=$('#mdots',el); for(let i=0;i<26;i++){ const s=h(`<i style="left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*4}s;animation-duration:${3+Math.random()*4}s"></i>`); sp.appendChild(s); }
@@ -2423,10 +2423,10 @@ function popStageDetail(opt){
    <div class="sub">รางวัลด่าน</div><div class="rws">${rewHTML('gold',rw.gold)}${rewHTML('exp',rw.exp)}${opt.event&&!opt.endless?rewHTML('cur_'+opt.event,20+opt.stage*10):''}${opt.endless?rewHTML('cur_'+opt.event,15)+'<small>/เวฟ</small>':''}${!rec?rewHTML('gems',inf.boss.length?100:50):''}${rewHTML('exp_s',2)}</div>
    <div class="sub">ทีม (${S.preset})</div><div class="tmini">${teamIds().map(id=>`<img src="${src(CHAR[id].img)}">`).join('')||'<span>ยังไม่มีทีม!</span>'}<button class="btn sm" data-act="team">จัดทีม</button></div>
    ${combosFor(teamIds()).length?`<div class="cmbmini">${combosFor(teamIds()).map(c=>`<span>${icH(c.ic)} ${c.n}</span>`).join('')}</div>`:''}
-   <div class="row c">${btn('กลับ','gray','close')}<button class="btn yellow big" data-act="go">เริ่มต่อสู้ <img src="${src('bolt')}">${inf.cost}</button></div>`,'wide');
+   <div class="row c">${btn('กลับ','gray','close')}<button class="btn yellow big" data-act="go">เริ่มต่อสู้ ▶</button></div>`,'wide');
   $('[data-act=close]',m).onclick=()=>closeModal(m);
   $('[data-act=team]',m).onclick=()=>{ $$('.modal').forEach(x=>x.remove()); go('team',{ret:opt}); };
-  $('[data-act=go]',m).onclick=()=>{ tickStamina(); if(opt.rush&&!miniLeft('rush')){ toast('วันนี้เล่นครบแล้ว'); return; } if(opt.rush){ S.mini.rush=(S.mini.rush||0)+1; } if(!teamIds().length){ toast('จัดทีมก่อนนะ!'); return;} if(S.stamina<inf.cost){ toast('พลังงานไม่พอ'); popStamina(); return;} S.stamina-=inf.cost; if(S.stamina<staminaMax()) S.staminaT=S.staminaT||Date.now(); track('play'); $$('.modal').forEach(x=>x.remove()); enterBattle(opt); };
+  $('[data-act=go]',m).onclick=()=>{ tickStamina(); if(opt.rush&&!miniLeft('rush')){ toast('วันนี้เล่นครบแล้ว'); return; } if(opt.rush){ S.mini.rush=(S.mini.rush||0)+1; } if(!teamIds().length){ toast('จัดทีมก่อนนะ!'); return;} track('play'); $$('.modal').forEach(x=>x.remove()); enterBattle(opt); };
 }
 function enterBattle(opt){ curScreen='battle'; ui.style.display='none'; cv.style.display='block'; startBattle(opt); }
 
@@ -2602,7 +2602,7 @@ function endBattle(win){
     if(win) [0,1,2].forEach(i=>{ if(i<starsN) setTimeout(()=>AudioSys.sfx('levelup'),300+i*350); });
     const act=a=>{ const b=$(`[data-act=${a}]`,m); if(b) return b; return {set onclick(f){}}; };
     act('home').onclick=()=>{ closeModal(m); go('menu'); };
-    act('retry').onclick=()=>{ closeModal(m); const inf=stageInfo(opt); tickStamina(); if(S.stamina<inf.cost){ toast('พลังงานไม่พอ'); go('menu'); return;} S.stamina-=inf.cost; track('play'); startBattle(opt); };
+    act('retry').onclick=()=>{ closeModal(m); const inf=stageInfo(opt); tickStamina(); track('play'); startBattle(opt); };
     act('next').onclick=()=>{ closeModal(m); if(opt.event){ go('event'); popStageDetail({event:opt.event,stage:opt.stage+1}); } else { go('world'); popStageDetail({world:opt.world,stage:opt.stage+1,diff:opt.diff}); } };
     act('team').onclick=()=>{ closeModal(m); go('team',{ret:opt}); };
     act('up').onclick=()=>{ closeModal(m); go('collection'); };
@@ -2817,7 +2817,7 @@ function dailyOffers(seedKey,n){ let seed=0; for(const ch of seedKey) seed=(seed
   const out=[]; while(out.length<n){ const o=pool[Math.floor(rnd()*pool.length)]; if(!out.includes(o)) out.push(o);} return out; }
 function scrShop(){
   if(S.shop.daily!==today()){ S.shop.daily=today(); S.shop.dailyBought={}; } if(S.shop.weekly!==weekKey()){ S.shop.weekly=weekKey(); S.shop.weeklyBought={}; }
-  const tabs=[['general','ทั่วไป'],['gold','Gold'],['gem','Gem'],['energy','พลังงาน'],['medal','เหรียญ'],['material','วัสดุ'],['costume','ชุด'],['event','กิจกรรม'],['daily','รายวัน'],['weekly','รายสัปดาห์']];
+  const tabs=[['general','ทั่วไป'],['gold','Gold'],['gem','Gem'],['medal','เหรียญ'],['material','วัสดุ'],['costume','ชุด'],['event','กิจกรรม'],['daily','รายวัน'],['weekly','รายสัปดาห์']];
   const el=h(`<div class="screen mint">${topbar('ร้านค้า')}<div class="tabs shop">${tabs.map(([k,n])=>`<b data-t="${k}" class="${shopTab===k?'on':''}">${n}</b>`).join('')}</div><div class="sgrid2" id="sitems"></div></div>`);
   ui.appendChild(el); bindCommon(el);
   $$('[data-t]',el).forEach(b=>b.onclick=()=>{ shopTab=b.dataset.t; AudioSys.sfx('tab'); go('shop'); });
