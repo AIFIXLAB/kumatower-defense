@@ -1684,7 +1684,7 @@ function startBattle(opt){
   let mapId,cfg,title;
   if(opt.duo){ mapId='duo'; B_world={bg:['#ffe3f0','#e6f4ff']}; const allPool=[].concat(...WORLDS.map(w=>w.pool));
     cfg={pool:[...new Set(allPool)].sort(()=>Math.random()-0.5),nW:50,g:4,diff:1,stage:1,duo:true,bossCycle:Object.keys(BOSSES).sort(()=>Math.random()-0.5)}; title='ศึกสองเส้นทาง 50 เวฟ';
-  } else if(opt.rush){ mapId=pick([3,1,0,2,'gardenB','forest2','snow1','sweet1','loy2']); B_world={bg:['#fff1b8','#ffe0f0']}; const allPool=[].concat(...WORLDS.map(w=>w.pool));
+  } else if(opt.rush){ mapId='duo'; B_world={bg:['#fff1b8','#ffe0f0']}; const allPool=[].concat(...WORLDS.map(w=>w.pool));
     cfg={pool:[...new Set(allPool)],nW:1,g:6,diff:1,stage:1,rush:true}; title='โหมดล่าเหรียญ (จับเวลา)';
   } else if(opt.endless){ const ev=EVENTS.find(e=>e.id===opt.event); mapId=ev.maps[opt.mapIdx||0]; B_world={bg:ev.bg};
     cfg={pool:ev.pool,nW:60,g:5,diff:1,stage:1,endless:true,bossCycle:['nagaking','lotusqueen','moonking']}; title='โหมดพิเศษ: คืนเพ็ญไม่สิ้นสุด';
@@ -1868,7 +1868,7 @@ function drawRoute1(b,T,P){
     cx.beginPath(); cx.moveTo(x-12,by+52); cx.lineTo(x,by+70); cx.lineTo(x+12,by+52); cx.fillStyle=col; cx.fill();
     const im=icImg(ic); if(im) cx.drawImage(im,bx+10,by+6,40,40); cx.fillStyle=col; cx.textAlign='left'; cx.fillText(txt,bx+54,by+38); cx.restore(); };
   sign(Math.min(90,P.len*0.05),'มอนเข้าทางนี้','#ff4f7b','skull');
-  sign(Math.max(0,P.len-90),'ฐานของเรา','#3f9cff','heartShield');
+  sign(Math.max(0,P.len-90),b.rush?'วนกลับจุดเริ่ม':'ฐานของเรา','#3f9cff',b.rush?'circle':'heartShield');
 }
 // ---------- particles / text ----------
 function burst(x,y,n,colors,type,spd){ if(!S.settings.fx) n=Math.ceil(n/3); if(B.parts.length>700) return;
@@ -1992,7 +1992,7 @@ function update(dt){
   } else {
     while(b.spawnQ.length && b.spawnQ[0].t<=b.time){ spawnEnemy(b.spawnQ.shift()); }
     if(b.rush){ const R2=b.rush; R2.t-=dt; R2.el+=dt; R2.spawn-=dt; b.energy+=dt*6;
-      if(R2.spawn<=0){ const n=1+Math.floor(R2.el/25); for(let i=0;i<n;i++){ const id=pick(b.cfg.pool.slice(0,Math.min(b.cfg.pool.length,8+Math.floor(R2.el/6)))); spawnEnemy({id,hp:150*Math.pow(1.022,R2.el),d:-i*28,elite:Math.random()<0.04+R2.el/2000}); }
+      if(R2.spawn<=0&&b.enemies.length<140){ const n=1+Math.floor(R2.el/25); for(let i=0;i<n;i++){ const id=pick(b.cfg.pool.slice(0,Math.min(b.cfg.pool.length,8+Math.floor(R2.el/6)))); spawnEnemy({id,hp:150*Math.pow(1.022,R2.el),d:-i*28,elite:Math.random()<0.04+R2.el/2000}); }
         if(R2.el>40&&Math.random()<0.01) spawnEnemy({boss:pick(Object.keys(BOSSES)),hp:150*Math.pow(1.022,R2.el)*0.6}); R2.spawn=Math.max(0.28,1.0-R2.el*0.006); }
       if(R2.t<=0){ endBattle(true); return; } }
     else if(!b.spawnQ.length && b.enemies.length===0){ waveCleared(); }
@@ -2014,6 +2014,7 @@ function update(dt){
     sp*=1-b.bonus.slow; if(b.clock>0) sp*=0.3;
     e.d+=sp*dt; e.hop+=dt*(sp>0?9:2);
     const EP=b.paths[e.pi]||b.path; const p=pathPos(EP,e.d); const nx=p.x+p.nx*e.lane, ny=p.y+p.ny*e.lane; if(Math.abs(nx-e.x)>0.3) e.face=nx<e.x?-1:1; e.x=nx; e.y=ny;
+    if(e.d>=EP.len&&b.rush){ e.d=0; e.pi=Math.floor(Math.random()*b.paths.length); continue; }
     if(e.d>=EP.len){ e.dead=true; b.baseHp-=e.leak; b.leaked+=e.leak; AudioSys.sfx('leak'); b.shake=0.35; b.flashRed=0.5; floatText(e.x,e.y-40,'-'+e.leak+'❤','#ff5f7a',24); if(e.boss){ b.bossRef=null; hideBossBar(); AudioSys.setMode('battle'); } if(b.baseHp<=0){ endBattle(false); return; } }
   }
   b.enemies=b.enemies.filter(e=>!e.dead);
@@ -2373,7 +2374,7 @@ function stageUnlocked(w,s,d){ if(w===1&&s===1&&d===0) return true; if(d>0) retu
 function scrWorld(){
   const el=h(`<div class="screen sky">${topbar('เลือกโลก')}
    <div class="worlds">${WORLDS.map(W=>{ const un=!W.locked&&stageUnlocked(W.id,1,0); return `<div class="wcard ${W.locked?'lock':''} ${un?'':'dim'}" data-w="${W.id}"><img src="${src(W.isl)}"><div class="wstar">${W.locked?'🔒 เร็วๆ นี้':`★ ${worldStars(W.id)}/120`}</div></div>`;}).join('')}</div>
-   <div class="modes"><div class="modecard" data-md="rush">${icH('i74','mdimg')}<div><b>โหมดล่าเหรียญ (จับเวลา)</b><small>2 นาที มอนไหลไม่หยุดจนเต็มแมพ ตีตายได้เหรียญ แลกเป็นรางวัล • วันนี้เหลือ ${miniLeft('rush')}/${MINI_LIMIT.rush} • สถิติ ${fmt(S.mini.best.rush||0)}</small></div></div>
+   <div class="modes"><div class="modecard" data-md="rush">${icH('i74','mdimg')}<div><b>โหมดล่าเหรียญ (จับเวลา)</b><small>2 นาที มอน 2 เส้นทาง ไหลไม่หยุดจนเต็มแมพ ไม่มีเลือด ตีตายได้เหรียญ • วันนี้เหลือ ${miniLeft('rush')}/${MINI_LIMIT.rush} • สถิติ ${fmt(S.mini.best.rush||0)}</small></div></div>
      <div class="modecard duo" data-md="duo"><img class="mdmap" src="${src('m_duo')}"><div><b>ศึกสองเส้นทาง 50 เวฟ</b><small>มอน 2 เลนพร้อมกัน สลับกับบอสทุก 5 เวฟ • สถิติ ${S.mini.best.duo||0}/50 ${S.stages['1-5-0']?'':'<br>🔒 ผ่านด่าน 1-5 ก่อน'}</small></div></div></div>
    <div class="hint">✨ แตะเกาะเพื่อเลือกด่าน • ด่าน 5 และ 10 มีบอส • แต่ละด่านใช้แผนที่ต่างกัน • ผ่านด่านปกติเพื่อปลดล็อกระดับยาก</div></div>`);
   ui.appendChild(el); bindCommon(el);
@@ -2392,7 +2393,7 @@ function popStages(w,pageSel){
 }
 function stageInfo(opt){
   if(opt.duo) return {map:'duo',pool:[...new Set([].concat(...WORLDS.map(w=>w.pool)))].slice(0,14),boss:Object.keys(BOSSES).slice(0,6),cost:12,name:'ศึกสองเส้นทาง 50 เวฟ',g:30,rec:0,duo:1};
-  if(opt.rush) return {map:3,pool:[...new Set([].concat(...WORLDS.map(w=>w.pool)))].slice(0,14),boss:[],cost:0,name:'โหมดล่าเหรียญ (จับเวลา 2 นาที)',g:10,rec:0,rush:1};
+  if(opt.rush) return {map:'duo',pool:[...new Set([].concat(...WORLDS.map(w=>w.pool)))].slice(0,14),boss:[],cost:0,name:'โหมดล่าเหรียญ (จับเวลา 2 นาที)',g:10,rec:0,rush:1};
   if(opt.endless){ const ev=EVENTS.find(e=>e.id===opt.event); return {map:ev.maps[opt.mapIdx||0],pool:ev.pool,boss:['nagaking','lotusqueen','moonking'],cost:10,name:'โหมดพิเศษ: คืนเพ็ญไม่สิ้นสุด',g:20,rec:0,endless:1}; }
   if(opt.event){ const ev=EVENTS.find(e=>e.id===opt.event);
     if(ev.stages){ const g=ev.g0+opt.stage*3; return {map:ev.maps[(opt.stage-1)%ev.maps.length],pool:ev.pool.slice(0,Math.min(ev.pool.length,opt.stage+4)),boss:ev.bossAt[opt.stage]?[ev.bossAt[opt.stage]]:[],cost:opt.stage%5===0?8:6,name:`${ev.name} ด่าน ${opt.stage}`,g,rec:Math.round(1600*Math.pow(1.075,g-1))}; }
@@ -2417,7 +2418,7 @@ function popStageDetail(opt){
    <div class="sub">ศัตรูที่ปรากฏ</div><div class="emons">${enemyHTML}</div>
    <div class="sub">สกิลศัตรูที่ต้องระวัง</div><div class="skl">${skillsUsed.map(k=>`<span title="${ENEMY_SKILL_INFO[k].d}"><b>${icH(ENEMY_SKILL_INFO[k].ic)} ${ENEMY_SKILL_INFO[k].n}</b><small>${ENEMY_SKILL_INFO[k].d}</small></span>`).join('')}</div>
    ${inf.duo?`<div class="endlessinfo">${icH('m_duo','bigic')}<div><b>สองเส้นทาง 50 เวฟ!</b><small>มอนแยกเดิน 2 เลน • บอสทุก 5 เวฟ สลับเลน • เวฟ 10, 20, 30... บอสมาคู่ 2 เลนพร้อมกัน • จุดวางกลางแมพยิงได้ทั้ง 2 เลน</small><small>สถิติสูงสุด: <b>${(S.mini.best.duo||0)} เวฟ</b></small></div></div>`:''}
-   ${inf.rush?`<div class="endlessinfo">${icH('i74','bigic')}<div><b>ล่าเหรียญ 2 นาที!</b><small>มอนไหลออกมาไม่หยุด ยิ่งนานยิ่งเยอะยิ่งอึด • ตีตายได้เหรียญ (อีลีท 40, บอส 300) • หมดเวลา = แลกเหรียญเป็น Gold + รางวัล • ฐาน 25 HP</small><small>วันนี้เหลือ <b>${miniLeft('rush')}/${MINI_LIMIT.rush}</b> • สถิติ ${fmt(S.mini.best.rush||0)} เหรียญ</small></div></div>`:''}
+   ${inf.rush?`<div class="endlessinfo">${icH('i74','bigic')}<div><b>ล่าเหรียญ 2 นาที!</b><small>มอนไหลออกมาไม่หยุด ยิ่งนานยิ่งเยอะยิ่งอึด • มอนออก 2 เส้นทางพร้อมกัน • ไม่มีเลือดฐาน มอนที่หลุดจะวนกลับมาเดินใหม่ ยิ่งปล่อยยิ่งเต็มแมพ • ตีตายได้เหรียญ (อีลีท 40, บอส 300) • หมดเวลา = แลกเหรียญเป็นรางวัล</small><small>วันนี้เหลือ <b>${miniLeft('rush')}/${MINI_LIMIT.rush}</b> • สถิติ ${fmt(S.mini.best.rush||0)} เหรียญ</small></div></div>`:''}
    ${inf.endless?`<div class="endlessinfo">${icH('loyi45','bigic')}<div><b>เอาตัวรอดให้ได้นานที่สุด!</b><small>ศัตรูแข็งแกร่งขึ้นทุกเวฟ (+13% HP) • มีมอนชนิดใหม่เพิ่มขึ้นเรื่อยๆ • บอสโผล่ทุก 10 เวฟ • ได้รางวัลตามจำนวนเวฟที่รอด</small><small>สถิติสูงสุด: <b>${S.mini.best.endless||0} เวฟ</b></small></div></div>`:''}
    <div class="sub">รางวัลด่าน</div><div class="rws">${rewHTML('gold',rw.gold)}${rewHTML('exp',rw.exp)}${opt.event&&!opt.endless?rewHTML('cur_'+opt.event,20+opt.stage*10):''}${opt.endless?rewHTML('cur_'+opt.event,15)+'<small>/เวฟ</small>':''}${!rec?rewHTML('gems',inf.boss.length?100:50):''}${rewHTML('exp_s',2)}</div>
    <div class="sub">ทีม (${S.preset})</div><div class="tmini">${teamIds().map(id=>`<img src="${src(CHAR[id].img)}">`).join('')||'<span>ยังไม่มีทีม!</span>'}<button class="btn sm" data-act="team">จัดทีม</button></div>
@@ -2495,9 +2496,9 @@ function updateHUD(){ if(!B) return; $('#hspd',hud).textContent='x'+B.speed; }
 let hudAcc=0;
 function hudTick(){
   if(!B||curScreen!=='battle') return;
-  $('#hhp',hud).textContent=Math.max(0,B.baseHp)+'/'+B.baseMax;
+  $('.hbox.hp',hud).style.display=B.rush?'none':''; $('#hhp',hud).textContent=Math.max(0,B.baseHp)+'/'+B.baseMax;
   $('#hwave',hud).textContent=B.rush?('⏱'+Math.max(0,Math.ceil(B.rush.t))+'s  🪙'+fmt(B.rush.coins)):B.opt.endless?B.wave+'/∞':B.wave+'/'+B.nW;
-  $('#henemy',hud).textContent=Math.max(0,B.totalEnemies-B.kills-B.leaked+B.enemies.filter(e=>e.mini).length*0)+'';
+  $('#henemy',hud).textContent=B.rush?B.enemies.length+'':Math.max(0,B.totalEnemies-B.kills-B.leaked)+'';
   $('#hen',hud).textContent=fmt(B.energy); $('#hreg',hud).textContent=B.regen?'+'+B.regen.toFixed(1)+'/วิ':'';
   const st=$('#hstart',hud); const show=!B.waveActive&&B.wave<B.nW&&!B.over; st.style.display=show?'block':'none'; if(show) $('#cdn',hud).textContent=Math.ceil(B.countdown)+'s';
   updateRing(); hudAcc++; if(hudAcc%6===0){ refreshCardsLight(); $$('#combos .cmb',hud).forEach(b=>{ const cb=B.combos[+b.dataset.i]; if(!cb) return; const r=cb.on&&cb.g>=100; b.classList.toggle('on',cb.on); b.classList.toggle('ready',r); $('u',b).style.height=cb.g+'%'; $('b',b).textContent=cb.on?(r?'GO!':Math.floor(cb.g)+'%'):'—'; }); }
