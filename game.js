@@ -2280,13 +2280,13 @@ function popChar(id,redraw,tab='lv'){
   const c=CHAR[id], st=S.chars[id], k=CLASSES[c.cls], el=ELEMENTS[c.elem];
   if(st&&st.isNew){ st.isNew=false; save(); }
   const s=charStats(id); const strong=ELEM_STRONG[c.elem].map(e=>icH(ELEMENTS[e].ic)).join(''); const imm=(ELEM_IMMUNE[c.elem]||[]).map(d=>icH(TOWER_DEBUFF[d].ic)+TOWER_DEBUFF[d].n).join(', ');
-  const affLv=st?Math.floor(st.aff/100):0;
+  const affLv=st?Math.floor(st.aff/100):0; const PV=st||newChar(id);
   const BIO={knight:'ปกป้องเพื่อนด้วยโล่ลายหมี ชอบกินฮันนี่โทสต์',archer:'ยิงธนูแม่นยำราวสายลม แอบชอบนอนกลางวัน',wizard:'ร่ายเวทวิเศษจากดวงดาว ชอบสะสมหินระยิบระยับ',healer:'ใจดีที่สุดในทีม พกพลาสเตอร์ลายหัวใจเสมอ',gunner:'ปืนกลลูกกวาดยิงรัว ทำเสียงปิ้วๆ ตลอดเวลา',bomber:'ระเบิดแสนน่ารักแต่แรงจัด ระวังขนไหม้นะ',support:'เชียร์เพื่อนเสียงดัง ทุกคนเลยมีพลังขึ้น',icemage:'เวทน้ำแข็งเย็นฉ่ำ ชอบไอศกรีมรสวานิลลา',thunder:'สายฟ้าแปลบๆ ขนฟูตลอดเวลาเพราะไฟฟ้าสถิต',druid:'คุยกับต้นไม้รู้เรื่อง ปลูกดอกไม้ทุกที่ที่ไป'};
   const m=openModal(`<div class="cdet">
-   <div class="cleft r${c.rar}" style="background-image:url(${src('stage')})"><img class="big ${st?'':'sil'}" src="${src(c.img)}">${st&&st.evo?`<img class="wings" src="${src('wing')}">`:''}<div class="rbadge" style="background:${RARITY[c.rar].c}">${RARITY[c.rar].n}</div></div>
+   <div class="cleft r${c.rar}" style="background-image:url(${src('stage')})"><img class="big ${st?'':'notown'}" src="${src(c.img)}">${st&&st.evo?`<img class="wings" src="${src('wing')}">`:''}<div class="rbadge" style="background:${RARITY[c.rar].c}">${RARITY[c.rar].n}</div></div>
    <div class="cright"><div class="cn"><b>${c.name}${st&&st.evo?' ✦':''}</b>${stars(st?st.star:c.rar,6)}</div>
     <div class="ctags"><span>${icH(k.ic)} ${k.n}</span><span style="background:${el.c}">${icH(el.ic)} ${el.n}</span><span>⚡ ${s.cost}</span>${st?`<span>Lv.${st.lvl}/${charMaxLv(st)}</span>`:'<span>ยังไม่มี</span>'}</div>
-    ${st?`<div class="lvprev">ดูพลังที่เลเวล: ${[st.lvl,30,50,100].filter((v,i,A)=>A.indexOf(v)===i).map(L=>`<b data-lv="${L}" class="${L===st.lvl?'on':''}">${L===st.lvl?'ปัจจุบัน (Lv.'+L+')':'Lv.'+L}</b>`).join('')}<div id="lvtbl"></div></div>`:''}
+    ${!st?`<div class="lvprev notown">🔒 ยังไม่มีตัวนี้ • ดูพลังตอนได้มา (Lv.1 ${c.rar}★) และถ้าอัปเลเวล:</div>`:''}<div class="lvprev">ดูพลังที่เลเวล: ${[PV.lvl,30,50,100].filter((v,i,A)=>A.indexOf(v)===i).map(L=>`<b data-lv="${L}" class="${L===PV.lvl?'on':''}">${L===PV.lvl?(st?'ปัจจุบัน':'ตอนได้มา')+' (Lv.'+L+')':'Lv.'+L}</b>`).join('')}<div id="lvtbl"></div></div>
     <div class="cstats"><div>❤️ HP <b>${fmt(s.hp)}</b></div><div>⚔️ ATK <b>${fmt(s.atk)}</b></div><div>⚡ SPD <b>${s.aspd}</b></div><div>🎯 RNG <b>${s.range}</b></div><div>💥 CRIT <b>${Math.round(s.crit*100)}%</b></div><div>💪 พลัง <b>${fmt(charPower(id))}</b></div></div>
     <div class="cskill"><b>${icH(skillOf(c).ic)} ${skillOf(c).n} Lv.${st?st.skill:1}</b><em class="skcd">ดีเลย์ ${skillOf(c).cd||15} วิ (สกิลแรง = ดีเลย์นาน)</em><small>${skillOf(c).d}</small></div>
     <div class="cskill"><b>🌟 Passive ธาตุ${el.n}</b><small>แรงกับ ${strong} • ${({fire:'เผาไหม้ต่อเนื่อง',water:'ผลักศัตรูถอยหลัง',ice:'ทำให้ช้าลง',nature:'ติดพิษ',earth:'ทำลายเกราะ',wind:'โจมตีเร็วขึ้น 10% + คริ',lightning:'มีโอกาสสตัน',dark:'สาปให้รับดาเมจเพิ่ม 20%'})[c.elem]}${imm?' • ต้านทาน: '+imm:''}</small></div>
@@ -2294,16 +2294,16 @@ function popChar(id,redraw,tab='lv'){
     ${k.cleanse?'<div class="cskill"><b>💖 Full Power</b><small>ปลดสถานะผิดปกติให้เพื่อนในระยะอัตโนมัติ</small></div>':''}${k.aura?'<div class="cskill"><b>📣 ออร่า</b><small>เพื่อนในระยะโจมตีเร็วขึ้น 15%+</small></div>':''}
     ${st?`<div class="caff">💗 ความผูกพัน Lv.${affLv} <i><u style="width:${st.aff%100}%"></u></i><small>${affLv>=1?'“'+BIO[c.cls]+'”':'เพิ่มความผูกพันเพื่อปลดล็อกเรื่องราว'} • โบนัส ATK +${affLv*2}%</small></div>`:''}
    </div></div>
-   ${st?`<div class="tabs up">${[['lv','เพิ่มเลเวล'],['star','เพิ่มดาว'],['evo','วิวัฒนาการ'],['skill','อัปสกิล'],['aff','ของขวัญ']].map(([kk,n])=>`<b data-t="${kk}" class="${tab===kk?'on':''}">${n}</b>`).join('')}</div><div class="uppanel" id="uppanel"></div>`:`<p class="c">ได้รับจากกาชา${EVENTS.some(e=>e.shop.includes(id))?' หรือร้านค้ากิจกรรม':''}</p>`}
+   ${st?`<div class="tabs up">${[['lv','เพิ่มเลเวล'],['star','เพิ่มดาว'],['evo','วิวัฒนาการ'],['skill','อัปสกิล'],['aff','ของขวัญ']].map(([kk,n])=>`<b data-t="${kk}" class="${tab===kk?'on':''}">${n}</b>`).join('')}</div><div class="uppanel" id="uppanel"></div>`:`<p class="c">ได้รับจากกาชา${EVENTS.some(e=>(e.shop||[]).includes(id))?' หรือร้านค้ากิจกรรม':''}</p>`}
    <div class="row c">${btn('ปิด','gray','close')}</div>`,'wide');
   $('[data-act=close]',m).onclick=()=>{ closeModal(m); redraw&&redraw(); };
   $$('[data-t]',m).forEach(b=>b.onclick=()=>{ AudioSys.sfx('tab'); closeModal(m); setTimeout(()=>popChar(id,redraw,b.dataset.t),190); });
-  if(!st) return;
-  const lvShow=L=>{ const need=Math.max(st.star,Math.ceil((L-25)/15)); const s2=charStats(id,{...st,lvl:L,star:Math.max(st.star,need)}), s0=charStats(id,st);
+  const lvShow=L=>{ const st=PV; const need=Math.max(st.star,Math.ceil((L-25)/15)); const s2=charStats(id,{...st,lvl:L,star:Math.max(st.star,need)}), s0=charStats(id,st);
     const pct=(a,b)=>b>a?` <i>+${Math.round((b/a-1)*100)}%</i>`:'';
     $('#lvtbl',m).innerHTML=L===st.lvl?'':`<div class="lvrow"><span>❤️ HP <b>${fmt(s2.hp)}</b>${pct(s0.hp,s2.hp)}</span><span>⚔️ ATK <b>${fmt(s2.atk)}</b>${pct(s0.atk,s2.atk)}</span><span>💪 พลัง <b>${fmt(charPowerAt(id,{...st,lvl:L,star:Math.max(st.star,need)}))}</b></span></div><small>${need>st.star?`ต้องอัปเป็น ${need}★ ก่อน (เลเวลสูงสุดตอนนี้ ${charMaxLv(st)})`:`อัปได้เลย (เลเวลสูงสุดตอนนี้ ${charMaxLv(st)})`} • เลเวลสูงสุดของเกม 100</small>`; };
   $$('[data-lv]',m).forEach(b=>b.onclick=()=>{ $$('[data-lv]',m).forEach(x=>x.classList.toggle('on',x===b)); AudioSys.sfx('tab'); lvShow(+b.dataset.lv); });
   const P=$('#uppanel',m); const reopen=t=>{ m.remove(); popChar(id,redraw,t||tab); };
+  if(!st) return;
   const fx=()=>{ const f=h('<div class="upfx"></div>'); $('.cleft',m).appendChild(f); setTimeout(()=>f.remove(),900); };
   if(tab==='lv'){
     const mx=charMaxLv(st); const need=charExpNeed(st.lvl);
@@ -3904,7 +3904,7 @@ function marioStars(w){ let t=0; for(let s=1;s<=marioStages(w);s++){ const r=S.e
 // ---------- event registration (shop/currency) ----------
 const MARIO_EV={id:'mario',name:'Rilakkuma × Mario Event',start:'2026-11-16',end:'2027-02-28',cur:'เหรียญมาริโอ้',curKey:'mg15'};
 Object.defineProperty(MARIO_EV,'curIcon',{get(){ return `<img class="ic" src="${src('mg15')}">`; }});
-MARIO_EV.stages=99; EVENTS.push(MARIO_EV);
+MARIO_EV.stages=99; MARIO_EV.shop=[]; EVENTS.push(MARIO_EV);
 const MARIO_SHOP=[{k:'mrtk',n:1,p:150},{k:'mrtk',n:5,p:650},{k:'gems',n:200,p:300},{k:'evo',n:5,p:300},{k:'umedal',n:15,p:300},{k:'book',n:3,p:250},{k:'exp_l',n:3,p:200}];
 
 // ---------- screen: curtain intro + world select ----------
