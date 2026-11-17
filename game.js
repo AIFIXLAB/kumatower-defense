@@ -680,12 +680,24 @@ const AudioSys = (() => {
 
 // ===== CORE: images, save system, utils =====
 'use strict';
-const IMG = {};
+const IMG_STORE = {};
+// big pictures (maps, backgrounds) are only decoded the first time something uses them
+const IMG = new Proxy(IMG_STORE,{get(t,k){ const im=t[k]; if(im&&im._lazy&&!im._started){ im._started=true; im.src=im._lazy; } return im; }});
+// Images are turned into small binary Blob URLs and the big base64 text is freed right away.
+// This roughly halves memory on iPad (Safari drops images / reloads the tab when memory runs out).
+function b64ToBlob(d){ const i=d.indexOf(','), mime=(d.slice(5,d.indexOf(';'))||'image/webp'), bin=atob(d.slice(i+1)); const u=new Uint8Array(bin.length); for(let j=0;j<bin.length;j++) u[j]=bin.charCodeAt(j); return new Blob([u],{type:mime}); }
 function loadImages(){
-  const keys=Object.keys(window.ASSETS); let done=0;
+  const A=window.ASSETS, keys=Object.keys(A); let done=0, idx=0; const bar=()=>{ const b=document.getElementById('loadbar'); if(b) b.style.width=(done/keys.length*100)+'%'; };
   return new Promise(res=>{
-    keys.forEach(k=>{ const im=new Image(); im.onload=im.onerror=()=>{ done++; const b=document.getElementById('loadbar'); if(b) b.style.width=(done/keys.length*100)+'%'; if(done===keys.length) res(); }; im.src=window.ASSETS[k]; IMG[k]=im; });
-  });
+    const finish=()=>{ done++; if(done%20===0) bar(); if(done===keys.length){ bar(); res(); } };
+    const step=()=>{ const end=Math.min(keys.length,idx+40);
+      for(;idx<end;idx++){ const k=keys[idx]; const d=A[k]; const im=new Image(); im.decoding='async';
+        let url=d; try{ if(typeof d==='string'&&d.startsWith('data:')&&window.URL&&URL.createObjectURL) url=URL.createObjectURL(b64ToBlob(d)); }catch(e){ url=d; }
+        const big=url!==d&&typeof d==='string'&&(d.length>160000||/^(mw\d|mwm|m_|map\d|vsmap|coopmap|avmap|mtreasure)/.test(k));
+        if(big){ im._lazy=url; finish(); } else { im.onload=im.onerror=finish; im.src=url; }
+        IMG_STORE[k]=im; A[k]=null; }
+      if(idx<keys.length) setTimeout(step,0); };
+    step(); });
 }
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
@@ -695,7 +707,7 @@ const rand=(a,b)=>a+Math.random()*(b-a);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const today=()=>{const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 const weekKey=()=>{const d=new Date(); const j=new Date(d.getFullYear(),0,1); return d.getFullYear()+'-W'+Math.ceil(((d-j)/864e5+j.getDay()+1)/7);};
-function src(k){ return IMG[k]?IMG[k].src:''; }
+function src(k){ const im=IMG[k]; return im?(im.src||im._lazy||''):''; }
 
 // ---------- SAVE ----------
 const SAVE_KEY='kumaTD_save_v1', BACKUP_KEY='kumaTD_backup_v1';
@@ -1711,6 +1723,7 @@ function render(){
   const MR=b.M.rect;
   // static layer (background + map with soft shadow) rendered once per size -> one unscaled blit per frame
   const SK=VIEW.W+'x'+VIEW.H+'@'+dpr;
+  if(!b.mapReady&&b.map&&!(b.map.complete&&b.map.naturalWidth)){ cx.setTransform(1,0,0,1,0,0); cx.fillStyle=bgc[0]; cx.fillRect(0,0,cv.width,cv.height); cx.setTransform(dpr*s,0,0,dpr*s,dpr*VIEW.ox,dpr*VIEW.oy); return; } b.mapReady=true;
   if(!b.stC||b.stC._k!==SK||b.stC._img!==b.map){ const sc=b.stC||document.createElement('canvas'); sc.width=cv.width; sc.height=cv.height; const g=sc.getContext('2d');
     g.setTransform(dpr,0,0,dpr,0,0); const bg=g.createLinearGradient(0,0,0,VIEW.H); bg.addColorStop(0,bgc[0]); bg.addColorStop(1,bgc[1]); g.fillStyle=bg; g.fillRect(0,0,VIEW.W,VIEW.H);
     g.setTransform(dpr*s,0,0,dpr*s,dpr*VIEW.ox,dpr*VIEW.oy); g.shadowColor='rgba(80,40,120,0.25)'; g.shadowBlur=30*s*dpr; g.shadowOffsetY=18*s*dpr; g.drawImage(b.map,MR[0],MR[1],MR[2],MR[3]);
@@ -1878,7 +1891,7 @@ function bindCommon(root){
 }
 function go(name,arg){
   curScreen=name; ui.innerHTML=''; ui.style.display='block'; hud.style.display='none'; cv.style.display='none';
-  if(name!=='battle'){ B=null; AudioSys.setMode('menu'); }
+  if(name!=='battle'){ if(B&&B.stC){ B.stC.width=B.stC.height=0; B.stC=null; } B=null; AudioSys.setMode('menu'); }
   if(typeof vsLeave==='function') vsLeave();
   if(AudioSys.setStyle&&name!=='mario') AudioSys.setStyle(null);
   ({room:scrRoom,minigame:scrMini,menu:scrMenu,world:scrWorld,team:scrTeam,collection:scrCollection,gacha:scrGacha,shop:scrShop,mission:scrMission,event:scrEvent,setting:scrSetting,trophy:scrTrophy,ranking:scrRanking,vs:scrVS,mario:scrMario})[name](arg);
@@ -3565,6 +3578,7 @@ function vsHud(G){ const el=G.ui.el; const F=[G.me,G.opp].sort((a,b)=>a.side-b.s
 }
 function vsRender(G){ const c=vsCx, V=VSV; const T=performance.now()/1000;
   const MP=G.map||{k:'vsmap',w:VSW,h:VSH}; const SK=V.W+'x'+V.H+'@'+V.dpr+MP.k;
+  const MI=IMG[MP.k]; if(!(MI.complete&&MI.naturalWidth)){ c.setTransform(1,0,0,1,0,0); c.fillStyle='#1d1340'; c.fillRect(0,0,vsCv.width,vsCv.height); return; }
   if(!G.stC||G.stC._k!==SK){ const sc=G.stC||document.createElement('canvas'); sc.width=vsCv.width; sc.height=vsCv.height; const g=sc.getContext('2d'); g.setTransform(V.dpr,0,0,V.dpr,0,0);
     const bg=g.createLinearGradient(0,0,0,V.H); bg.addColorStop(0,'#1d1340'); bg.addColorStop(1,'#4a2a7a'); g.fillStyle=bg; g.fillRect(0,0,V.W,V.H);
     for(let i=0;i<60;i++){ g.globalAlpha=0.25+(i%5)*0.1; g.fillStyle='#fff'; g.fillRect(i*977%V.W,i*571%V.H,2,2); } g.globalAlpha=1;

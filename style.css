@@ -692,3 +692,6 @@ textarea{width:100%;height:120px;border-radius:12px;border:3px solid #d9c8ff;fon
 .roomstage[data-pat=mstone] .rwall{background:linear-gradient(rgba(0,0,0,.25) 3px,transparent 3px) 0 0/80px 40px,linear-gradient(90deg,rgba(0,0,0,.25) 3px,transparent 3px) 0 0/80px 80px,linear-gradient(90deg,rgba(0,0,0,.25) 3px,transparent 3px) 40px 40px/80px 80px,linear-gradient(var(--w1),var(--w2))}
 .roomstage[data-pat=mcloud] .rwall{background:radial-gradient(ellipse 34px 16px at 40px 30px,#fff 98%,transparent) 0 0/180px 110px,radial-gradient(ellipse 22px 14px at 66px 24px,#fff 98%,transparent) 0 0/180px 110px,linear-gradient(var(--w1),var(--w2))}
 .roomstage[data-pat=mq] .rwall{background:radial-gradient(circle,#fff6a8 3px,transparent 4px) 6px 6px/48px 48px,conic-gradient(var(--w1) 25%,var(--w2) 0 50%,var(--w1) 0 75%,var(--w2) 0) 0 0/48px 48px}
+.cleft .big.notown{filter:saturate(.75) opacity(.9)}
+.ccard.locked .cimg img{filter:grayscale(.55) opacity(.6)!important}
+.lvprev.notown{background:#fff3d6;color:#8a5a00;border-radius:10px;padding:4px 10px;margin-bottom:4px}
